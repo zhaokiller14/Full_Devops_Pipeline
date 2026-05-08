@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tp4
+  namespace: myapp
+  labels:
+    app: tp4
+spec:
+  selector:
+    matchLabels:
+      app: tp4
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

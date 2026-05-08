@@ -1,0 +1,69 @@
+# Prometheus & Grafana Stack Helm Values
+# Install with: helm install prometheus prometheus-community/kube-prometheus-stack -f monitoring/prometheus-values.yaml -n monitoring --create-namespace
+
+prometheus:
+  prometheusSpec:
+    # Retention period for metrics
+    retention: 30d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+
+    # Service monitor selector to discover targets
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    
+    # Pod monitor selector
+    podMonitorSelector: {}
+    podMonitorNamespaceSelector: {}
+
+    # Scrape interval and timeout
+    scrapeInterval: 30s
+    scrapeTimeout: 10s
+
+    # External labels for identifying this cluster
+    externalLabels:
+      cluster: "tp4-cluster"
+      environment: "development"
+
+grafana:
+  enabled: true
+  adminPassword: "admin"
+  persistence:
+    enabled: true
+    size: 5Gi
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus-operated:9090
+          access: proxy
+          isDefault: true
+
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+prometheus-node-exporter:
+  enabled: true
+
+kube-state-metrics:
+  enabled: true
+
+# PrometheusOperator configuration
+prometheusOperator:
+  enabled: true
+  manageCrds: true

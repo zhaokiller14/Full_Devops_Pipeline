@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+      # Slack webhook URL (optional)
+      # slack_api_url: 'YOUR_SLACK_WEBHOOK_URL'
+
+    # Templates for alert messages
+    templates:
+      - '/etc/alertmanager/config/*.tmpl'
+
+    # Routing tree for alert handling
+    route:
+      # Default receiver
+      receiver: 'default'
+      
+      # Group alerts by labels
+      group_by: ['alertname', 'service', 'cluster']
+      
+      # Group wait time before sending notification
+      group_wait: 10s
+      
+      # Minimum time between notifications for the same alert
+      group_interval: 10s
+      
+      # Minimum time before resending a notification
+      repeat_interval: 12h
+      
+      # Child routes for specific alerts
+      routes:
+        # Critical alerts - immediate notification
+        - match:
+            severity: critical
+          receiver: 'critical'
+          group_wait: 0s
+          group_interval: 1m
+          repeat_interval: 1h
+          continue: true
+
+        # Warning alerts - standard notification
+        - match:
+            severity: warning
+          receiver: 'warning'
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 24h
+
+    # Receivers for different notification channels
+    receivers:
+      # Default receiver: logs only
+      - name: 'default'
+        webhook_configs:
+          - url: 'http://localhost:5000/alerts'
+            send_resolved: true
+
+      # Critical alerts: can add Slack/PagerDuty/Email
+      - name: 'critical'
+        webhook_configs:
+          - url: 'http://localhost:5000/alerts'
+            send_resolved: true
+        # Uncomment below for Slack notifications
+        # slack_configs:
+        #   - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        #     channel: '#critical-alerts'
+        #     title: 'Critical Alert'
+        #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+      # Warning alerts: logs only
+      - name: 'warning'
+        webhook_configs:
+          - url: 'http://localhost:5000/alerts'
+            send_resolved: true
+
+    # Inhibition rules - suppress certain alerts
+    inhibit_rules:
+      # Suppress warning alerts when critical alert exists for same service
+      - source_match:
+          severity: 'critical'
+        target_match:
+          severity: 'warning'
+        equal: ['alertname', 'service', 'cluster']

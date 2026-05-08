@@ -3,7 +3,7 @@ pipeline {
     environment {
         SONAR_TOKEN = credentials('sonar-token')
         KUBECONFIG  = "/var/jenkins_home/.kube/tp4-cluster.yaml"
-        IMAGE       = "syrinesmati/tp4"
+        IMAGE       = "zhaokiller/tp4"
     }
     stages {
         stage('Checkout') {

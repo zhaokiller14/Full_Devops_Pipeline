@@ -17,6 +17,18 @@ spec:
     spec:
       containers:
         - name: tp4
-          image: lgritli/tp4:IMAGE_TAG
+          image: zhaokiller/tp4:IMAGE_TAG
           ports:
             - containerPort: 5000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5

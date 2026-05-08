@@ -1,0 +1,84 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tp4-alerting-rules
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: tp4-application
+      interval: 30s
+      rules:
+        # Alert: Application service is down
+        - alert: TP4ServiceDown
+          expr: |
+            up{job="tp4", namespace="myapp"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            service: tp4
+          annotations:
+            summary: "TP4 Application Service Down"
+            description: "TP4 application service has been down for more than 2 minutes"
+
+        # Alert: High error rate
+        - alert: TP4HighErrorRate
+          expr: |
+            rate(http_requests_total{status=~"5..", job="tp4"}[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            service: tp4
+          annotations:
+            summary: "TP4 High Error Rate"
+            description: "TP4 application error rate is {{ $value | humanizePercentage }} over the last 5 minutes"
+
+        # Alert: High latency
+        - alert: TP4HighLatency
+          expr: |
+            histogram_quantile(0.95, http_request_duration_seconds_bucket{job="tp4"}) > 1
+          for: 5m
+          labels:
+            severity: warning
+            service: tp4
+          annotations:
+            summary: "TP4 High Latency Detected"
+            description: "TP4 application p95 latency is {{ $value | humanizeDuration }}"
+
+        # Alert: Pod restart loop
+        - alert: TP4PodRestartingLoop
+          expr: |
+            rate(kube_pod_container_status_restarts_total{pod=~"tp4.*", namespace="myapp"}[15m]) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            service: tp4
+          annotations:
+            summary: "TP4 Pod Restarting Loop"
+            description: "TP4 pod {{ $labels.pod }} is restarting frequently"
+
+    - name: cluster-health
+      interval: 30s
+      rules:
+        # Alert: Node not ready
+        - alert: KubernetesNodeNotReady
+          expr: |
+            kube_node_status_condition{condition="Ready", status="true"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Kubernetes node not ready"
+            description: "Node {{ $labels.node }} has been unready for more than 5 minutes"
+
+        # Alert: Pod not running
+        - alert: KubernetesPodNotRunning
+          expr: |
+            sum by (namespace, pod) (kube_pod_status_phase{namespace="myapp", phase=~"Pending|Failed"}) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Kubernetes pod not running"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is not running"
