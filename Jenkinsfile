@@ -2,6 +2,12 @@ pipeline {
     agent {
         label 'tp4'
     }
+
+options {
+        skipDefaultCheckout true     // ← This is important
+    }
+
+    
     environment {
         SONAR_TOKEN = credentials('sonar-token')
         KUBECONFIG  = "/var/jenkins_home/.kube/tp4-cluster.yaml"
