@@ -47,7 +47,7 @@ pipeline {
                     sh 'rm -f terraform.tfstate terraform.tfstate.backup'
                     sh 'terraform apply -auto-approve'
                     sh "terraform output -raw kubeconfig > ${KUBECONFIG}"
-                    sh "sed -i 's/127.0.0.1/172.17.0.1/g' ${KUBECONFIG}"
+                    sh "sed -i 's/127.0.0.1/host.docker.internal/g' ${KUBECONFIG}"
                 }
             }
         }
