@@ -40,6 +40,27 @@ pipeline {
                 always { junit 'test-results/results.xml' }
             }
         }
+        stage('Terraform') {
+            steps {
+                dir('terraform') {
+                    sh 'terraform init'
+                    sh 'rm -f terraform.tfstate terraform.tfstate.backup'
+                    sh 'terraform apply -auto-approve'
+                    sh "terraform output -raw kubeconfig > ${KUBECONFIG}"
+                    sh "sed -i 's/127.0.0.1/172.17.0.1/g' ${KUBECONFIG}"
+                }
+            }
+        }
+
+        stage('Ansible Deploy') {
+            steps {
+                sh '''
+                    ansible-playbook ansible/deploy.yml \
+                        -i ansible/inventory.ini \
+                        -e image_tag=${BUILD_NUMBER}
+                '''
+            }
+        }
 
         // Add the rest of your stages here later...
     }
