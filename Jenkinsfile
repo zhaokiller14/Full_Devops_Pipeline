@@ -47,7 +47,11 @@ pipeline {
                     sh 'rm -f terraform.tfstate terraform.tfstate.backup'
                     sh 'terraform apply -auto-approve'
                     sh "terraform output -raw kubeconfig > ${KUBECONFIG}"
+                    // Replace listen address so agent container can reach the API
                     sh "sed -i 's/127.0.0.1/host.docker.internal/g' ${KUBECONFIG}"
+                    // Remove certificate-authority-data and allow insecure TLS (local dev only)
+                    sh "sed -i '/certificate-authority-data/d' ${KUBECONFIG}"
+                    sh "sed -i '/server:/a\\    insecure-skip-tls-verify: true' ${KUBECONFIG}"
                 }
             }
         }
