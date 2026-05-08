@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent {
+        label 'tp4'
+    }
     environment {
         SONAR_TOKEN = credentials('sonar-token')
         KUBECONFIG  = "/var/jenkins_home/.kube/tp4-cluster.yaml"
