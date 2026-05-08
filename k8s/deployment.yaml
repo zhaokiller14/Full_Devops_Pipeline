@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: tp4
-          image: zhaokiller/tp4:IMAGE_TAG
+          image: zhaokiller/jenkins-agent-tp4:IMAGE_TAG
           ports:
             - containerPort: 5000
           livenessProbe:
